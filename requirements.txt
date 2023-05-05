@@ -7,6 +7,6 @@ pymorphy2==0.9.1
 wandb==0.15.0
 transformers==4.28.1
 tqdm==4.65.0
-datasets==2.11.0
+evaluate==0.4.0
 sacrebleu
 sentencepiece==0.1.98
