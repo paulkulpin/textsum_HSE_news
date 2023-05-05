@@ -145,8 +145,8 @@ class GPTSummarization(torch.nn.Module):
             scheduler.step()
 
 
-    def evaluate(self, model, dataloader, rouge_metric, bleu_metric, device, min_length, max_length, need_wandb=False):
-        model.eval()
+    def evaluate(self, tokenizer, dataloader, rouge_metric, bleu_metric, device, min_length, max_length, need_wandb=False):
+        self.model.eval()
 
         rouges1, rouges2, rougesL, rougesLsum, gen_len, bleu_ = [], [], [], [], [], []
 
@@ -156,12 +156,12 @@ class GPTSummarization(torch.nn.Module):
                 batch[k] = v.to(device)
 
             with torch.no_grad():
-                output_sequences = model.generate(input_ids=batch['input_ids'], do_sample=False, max_length=max_length, min_length=min_length)
+                output_sequences = self.model.generate(input_ids=batch['input_ids'], do_sample=False, max_length=max_length, min_length=min_length)
 
             for k, v in batch.items():
                 batch[k] = v.to('cpu')
 
-            metrics = compute_metrics((output_sequences.cpu(), batch['labels']), rouge_metric, bleu_metric) #['rouge1']
+            metrics = compute_metrics((output_sequences.cpu(), batch['labels']), tokenizer, rouge_metric, bleu_metric) #['rouge1']
             
             rouges1.append(metrics['rouge1'])
             rouges2.append(metrics['rouge2'])

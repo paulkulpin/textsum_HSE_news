@@ -37,7 +37,7 @@ if __name__ == "__main__":
     parser.add_argument('--csv_dataset_path', type=str, help="Full path to dataset csv file.", default="processed_news.csv")
     parser.add_argument('--model_state_path', type=str, help="Full path to model state_dict.", default="")
     parser.add_argument('--res_model_state_path', type=str, help="Full path to resulting model state_dict.", default="model_state.pth")
-    parser.add_argument('--res_model_comments_path', type=str, help="Path to file with comments", default="model_comments.txt")
+    parser.add_argument('--res_model_comments_path', type=str, help="Path to json file with comments", default="model_comments.json")
     parser.add_argument('--HF_model_name', type=str, help="Hugging Face model/tokenizer name", default="")
     parser.add_argument('--random_seed', type=int, help="Random seed for torch, numpy.", default=101)
     parser.add_argument('--cuda_idx', type=int, help="cuda:idx", default=0)
@@ -70,7 +70,7 @@ if __name__ == "__main__":
     args = dict(vars(parser.parse_args()))
 
     set_random_seed(args['random_seed'])
-    print(f'fixed random seed: {args["random_seed"]}')
+    print(f'>>>fixed random seed: {args["random_seed"]}\n')
 
     if args['ignore_warnings']:
         warnings.filterwarnings("ignore")
@@ -107,7 +107,7 @@ if __name__ == "__main__":
         tokenizer = T5Tokenizer.from_pretrained(args['HF_model_name'])
         print('>>>downloaded tokenizer.\n')
 
-        dataset = T5SumDataset(args['csv_dataset_path'], args['max_input_length'], args['max_target_length'], args['source_text_field_name'], args['annotation_field_name'])
+        dataset = T5SumDataset(args['csv_dataset_path'], tokenizer, args['max_input_length'], args['max_target_length'], args['source_text_field_name'], args['annotation_field_name'])
         dataloader = torch.utils.data.DataLoader(dataset, collate_fn=partial(t5_collate_batch, tokenizer.pad_token_id), batch_size=args['batch_size'], shuffle=True, pin_memory=True)
         sum_model = T5Summarization(model)
 
@@ -123,7 +123,7 @@ if __name__ == "__main__":
         tokenizer = MBartTokenizer.from_pretrained(args['HF_model_name'])
         print('>>>downloaded tokenizer.\n')
 
-        dataset = MBARTSumDataset(args['csv_dataset_path'], args['max_input_length'], args['max_target_length'], args['source_text_field_name'], args['annotation_field_name'])
+        dataset = MBARTSumDataset(args['csv_dataset_path'], tokenizer, args['max_input_length'], args['max_target_length'], args['source_text_field_name'], args['annotation_field_name'])
         dataloader = torch.utils.data.DataLoader(dataset, collate_fn=partial(mbart_collate_batch, tokenizer.pad_token_id), batch_size=args['batch_size'], shuffle=True, pin_memory=True)
         sum_model = MBARTSummarization(model)
 
@@ -140,14 +140,16 @@ if __name__ == "__main__":
         print('>>>downloaded tokenizer.\n')
         
         if args['action'] == 'training':
-            dataset = GPTSumDataset(args['csv_dataset_path'], args['max_input_length'], args['max_target_length'], args['source_text_field_name'], args['annotation_field_name'], ds_type='train')
+            dataset = GPTSumDataset(args['csv_dataset_path'], tokenizer, args['max_input_length'], args['max_target_length'], args['source_text_field_name'], args['annotation_field_name'], ds_type='train')
         else:
-            dataset = GPTSumDataset(args['csv_dataset_path'], args['max_input_length'], args['max_target_length'], args['source_text_field_name'], args['annotation_field_name'], ds_type='test')
+            dataset = GPTSumDataset(args['csv_dataset_path'], tokenizer, args['max_input_length'], args['max_target_length'], args['source_text_field_name'], args['annotation_field_name'], ds_type='test')
+        
+        args['eval_max_length'] += args['max_input_length']
         dataloader = torch.utils.data.DataLoader(dataset, collate_fn=partial(gpt_collate_batch, tokenizer.pad_token_id), batch_size=args['batch_size'], shuffle=True, pin_memory=True)
         sum_model = GPTSummarization(model)
-
     else:
-        raise NotImplementedError(f'unknown ')
+        raise NotImplementedError(f'unknown model_type {args["model_type"]}')
+
 
     if args['action'] == 'training':
         with open(args['res_model_comments_path'], 'w') as f:
@@ -164,7 +166,7 @@ if __name__ == "__main__":
         torch.save(model.state_dict(), args['res_model_state_path'])
 
     elif args['action'] == 'evaluating':
-        eval_res = evaluate(model=sum_model.model, dataloader=dataloader, bleu_metric=bleu_metric, rouge_metric=rouge_metric, device=device, need_wandb=args['need_wandb'], min_length=args['eval_min_length'], max_length=args['eval_max_length'])
+        eval_res = sum_model.evaluate(tokenizer=tokenizer, dataloader=dataloader, bleu_metric=bleu_metric, rouge_metric=rouge_metric, device=device, need_wandb=args['need_wandb'], min_length=args['eval_min_length'], max_length=args['eval_max_length'])
         print('\n\n################ EVALUATION RESULT ################')
         print(eval_res)
         print('###################################################\n\n')

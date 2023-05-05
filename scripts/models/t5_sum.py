@@ -137,7 +137,7 @@ class T5Summarization(torch.nn.Module):
 
             scheduler.step()
             
-    def evaluate(self, dataloader, rouge_metric, bleu_metric, device, min_length, max_length, need_wandb=False):
+    def evaluate(self, tokenizer, dataloader, rouge_metric, bleu_metric, device, min_length, max_length, need_wandb=False):
         self.model.eval()
         rouges1, rouges2, rougesL, rougesLsum, gen_len, bleu_ = [], [], [], [], [], []
 
@@ -148,7 +148,7 @@ class T5Summarization(torch.nn.Module):
             with torch.no_grad():
                 output_sequences = self.model.generate(input_ids=batch["input_ids"], attention_mask=batch["attention_mask"], max_length=max_length, min_length=min_length, do_sample=False)
             
-            metrics = compute_metrics((output_sequences.cpu(), batch['labels'].cpu()), rouge_metric, bleu_metric)
+            metrics = compute_metrics((output_sequences.cpu(), batch['labels'].cpu()), tokenizer, rouge_metric, bleu_metric)
             
             rouges1.append(metrics['rouge1'])
             rouges2.append(metrics['rouge2'])
