@@ -36,6 +36,7 @@ if __name__ == "__main__":
     #base params
     parser.add_argument('--csv_dataset_path', type=str, help="Full path to dataset csv file.", default="processed_news.csv")
     parser.add_argument('--shuffle_dataset', type=bool, help="if dataset suffling needed True/False", default=False)
+    parser.add_argument('--reduce_dataset', type=int, help="Percentage part to reduce", default=100)
     parser.add_argument('--model_state_path', type=str, help="Full path to model state_dict.", default="")
     parser.add_argument('--res_model_state_path', type=str, help="Full path to resulting model state_dict.", default="model_state.pth")
     parser.add_argument('--res_model_comments_path', type=str, help="Path to json file with comments", default="model_comments.json")
@@ -108,7 +109,7 @@ if __name__ == "__main__":
         tokenizer = T5Tokenizer.from_pretrained(args['HF_model_name'])
         print('>>>downloaded tokenizer.\n')
 
-        dataset = T5SumDataset(args['csv_dataset_path'], tokenizer, args['max_input_length'], args['max_target_length'], args['source_text_field_name'], args['annotation_field_name'])
+        dataset = T5SumDataset(args['csv_dataset_path'], tokenizer, args['max_input_length'], args['max_target_length'], args['source_text_field_name'], args['annotation_field_name'], args['reduce_dataset'])
         dataloader = torch.utils.data.DataLoader(dataset, collate_fn=partial(t5_collate_batch, tokenizer.pad_token_id), batch_size=args['batch_size'], shuffle=args['shuffle_dataset'], pin_memory=True)
         sum_model = T5Summarization(model)
 
@@ -124,7 +125,7 @@ if __name__ == "__main__":
         tokenizer = MBartTokenizer.from_pretrained(args['HF_model_name'])
         print('>>>downloaded tokenizer.\n')
 
-        dataset = MBARTSumDataset(args['csv_dataset_path'], tokenizer, args['max_input_length'], args['max_target_length'], args['source_text_field_name'], args['annotation_field_name'])
+        dataset = MBARTSumDataset(args['csv_dataset_path'], tokenizer, args['max_input_length'], args['max_target_length'], args['source_text_field_name'], args['annotation_field_name'], args['reduce_dataset'])
         dataloader = torch.utils.data.DataLoader(dataset, collate_fn=partial(mbart_collate_batch, tokenizer.pad_token_id), batch_size=args['batch_size'], shuffle=args['shuffle_dataset'], pin_memory=True)
         sum_model = MBARTSummarization(model)
 
@@ -141,7 +142,7 @@ if __name__ == "__main__":
         print('>>>downloaded tokenizer.\n')
         
         if args['action'] == 'training':
-            dataset = GPTSumDataset(args['csv_dataset_path'], tokenizer, args['max_input_length'], args['max_target_length'], args['source_text_field_name'], args['annotation_field_name'], ds_type='train')
+            dataset = GPTSumDataset(args['csv_dataset_path'], tokenizer, args['max_input_length'], args['max_target_length'], args['source_text_field_name'], args['annotation_field_name'], args['reduce_dataset'], ds_type='train')
         else:
             dataset = GPTSumDataset(args['csv_dataset_path'], tokenizer, args['max_input_length'], args['max_target_length'], args['source_text_field_name'], args['annotation_field_name'], ds_type='test')
         

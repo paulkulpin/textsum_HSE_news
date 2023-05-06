@@ -15,16 +15,16 @@ def preprocess_function(row, tokenizer, max_input_length, max_target_length, doc
 
 
 class T5SumDataset(torch.utils.data.Dataset):
-    def __init__(self, path, tokenizer, max_input_length, max_target_length, document_field_name, summary_field_name, ds_type='train'):
+    def __init__(self, path, tokenizer, max_input_length, max_target_length, document_field_name, summary_field_name, reduce_part):
         super().__init__()
         assert path[-4:] == '.csv', 'dataset file is not a csv file'
         self.path = path
-        self.ds_type = ds_type
         df = pd.read_csv(self.path)
         self.data = []
         for ind in tqdm(df.index, total=len(df), desc='Creating dataset'):
             self.data += [preprocess_function(df.loc[ind], tokenizer, max_input_length, max_target_length, document_field_name, summary_field_name)]
-
+            if ind > (len(df) / 100) * reduce_part:
+                break
         del df
 
     def __len__(self):

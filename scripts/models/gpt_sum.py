@@ -25,7 +25,7 @@ def preprocess_function(row, ds_type, tokenizer, max_input_length, max_target_le
 
 
 class GPTSumDataset(torch.utils.data.Dataset):
-    def __init__(self, path, tokenizer, max_input_length, max_target_length, document_field_name, summary_field_name, ds_type='train'):
+    def __init__(self, path, tokenizer, max_input_length, max_target_length, document_field_name, summary_field_name, reduce_part, ds_type='train'):
         super().__init__()
         assert path[-4:] == '.csv', 'dataset file is not a csv file'
         self.path = path
@@ -34,6 +34,8 @@ class GPTSumDataset(torch.utils.data.Dataset):
         self.data = []
         for ind in tqdm(df.index, total=len(df), desc='Creating dataset'):
             self.data += [preprocess_function(df.loc[ind], ds_type, tokenizer, max_input_length, max_target_length, document_field_name, summary_field_name)]
+            if ind > (len(df) / 100) * reduce_part:
+                break
         del df
 
     def __len__(self):
@@ -150,7 +152,6 @@ class GPTSummarization(torch.nn.Module):
         rouges1, rouges2, rougesL, rougesLsum, gen_len, bleu_ = [], [], [], [], [], []
 
         for batch in tqdm(dataloader):
-            print('sizes, shapes')
             for k, v in batch.items():
                 batch[k] = v.to(device)
 
