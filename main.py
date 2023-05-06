@@ -32,7 +32,7 @@ def set_random_seed(seed):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process scrapped json.')
     parser.add_argument('--action', type=str, help="training/evaluating", default="evaluating")
-    parser.add_argument('--model_type', type=str, help="T5/GPT/BART", default="T5")
+    parser.add_argument('--model_type', type=str, help="T5/GPT/MBART", default="T5")
     #base params
     parser.add_argument('--csv_dataset_path', type=str, help="Full path to dataset csv file.", default="processed_news.csv")
     parser.add_argument('--shuffle_dataset', type=bool, help="if dataset suffling needed True/False", default=False)
@@ -114,7 +114,7 @@ if __name__ == "__main__":
         dataloader = torch.utils.data.DataLoader(dataset, collate_fn=partial(t5_collate_batch, tokenizer.pad_token_id), batch_size=args['batch_size'], shuffle=args['shuffle_dataset'], pin_memory=True)
         sum_model = T5Summarization(model)
 
-    elif args['model_type'] == 'BART':
+    elif args['model_type'] == 'MBART':
         if args['model_state_path'] != "":
             conf = MBartConfig.from_pretrained(args['HF_model_name'])
             model = MBartForConditionalGeneration(config=conf)

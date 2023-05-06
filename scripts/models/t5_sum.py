@@ -120,7 +120,7 @@ class T5Summarization(torch.nn.Module):
                     optimizer.step()
                     optimizer.zero_grad(set_to_none=True)
 
-            if i % (len(dataloader) * saving_steps_fraction) == (len(dataloader) * saving_steps_fraction) - 1:
+            if i % int(len(dataloader) * saving_steps_fraction) == (int(len(dataloader) * saving_steps_fraction)) - 1:
                 if saving_dir == '':
                     torch.save(self.model.state_dict(), f'model_state_ep{epoch+1}_step{i}.pth')
                 else:
