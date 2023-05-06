@@ -34,7 +34,7 @@ class GPTSumDataset(torch.utils.data.Dataset):
         self.data = []
         for ind in tqdm(df.index, total=len(df), desc='Creating dataset'):
             self.data += [preprocess_function(df.loc[ind], ds_type, tokenizer, max_input_length, max_target_length, document_field_name, summary_field_name)]
-            if ind > (len(df) / 100) * reduce_part:
+            if reduce_part != 100 and ind > (len(df) / 100) * reduce_part:
                 break
         del df
 
