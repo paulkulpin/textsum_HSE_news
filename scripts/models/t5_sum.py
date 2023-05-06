@@ -23,7 +23,7 @@ class T5SumDataset(torch.utils.data.Dataset):
         self.data = []
         for ind in tqdm(df.index, total=len(df), desc='Creating dataset'):
             self.data += [preprocess_function(df.loc[ind], tokenizer, max_input_length, max_target_length, document_field_name, summary_field_name)]
-            if reduce_part != 100 and ind > (len(df) / 100) * reduce_part:
+            if reduce_part != 100.0 and ind > (len(df) / 100) * reduce_part:
                 break
         del df
 
@@ -98,6 +98,9 @@ class T5Summarization(torch.nn.Module):
         self.model.train()
 
         scaler = torch.cuda.amp.GradScaler() if use_mp else None
+        part = int(len(dataloader) * saving_steps_fraction)
+        if part == 0:
+            part = 2
 
         for i, batch in tqdm(enumerate(dataloader), total=len(dataloader), desc=f'Trainig {epoch}/{num_epochs}'):
             for k, v in batch.items():
@@ -126,7 +129,7 @@ class T5Summarization(torch.nn.Module):
                     optimizer.step()
                     optimizer.zero_grad(set_to_none=True)
 
-            if i % int(len(dataloader) * saving_steps_fraction) == int(len(dataloader) * saving_steps_fraction) - 1:
+            if i % part == part - 1:
                 if saving_dir == '':
                     torch.save(self.model.state_dict(), f'model_state_ep{epoch+1}_step{i}.pth')
                 else:

@@ -36,7 +36,7 @@ if __name__ == "__main__":
     #base params
     parser.add_argument('--csv_dataset_path', type=str, help="Full path to dataset csv file.", default="processed_news.csv")
     parser.add_argument('--shuffle_dataset', type=bool, help="if dataset suffling needed True/False", default=False)
-    parser.add_argument('--reduce_dataset', type=int, help="Percentage part to reduce", default=100)
+    parser.add_argument('--reduce_dataset', type=float, help="Percentage part to reduce", default=100.0)
     parser.add_argument('--model_state_path', type=str, help="Full path to model state_dict.", default="")
     parser.add_argument('--res_model_state_path', type=str, help="Full path to resulting model state_dict.", default="model_state.pth")
     parser.add_argument('--res_model_comments_path', type=str, help="Path to json file with comments", default="model_comments.json")
