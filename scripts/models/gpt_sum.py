@@ -70,24 +70,20 @@ def compute_metrics(eval_pred, tokenizer, rouge_metric, bleu_metric):
     r_decoded_preds = ["\n".join(nltk.sent_tokenize(pred.strip())) for pred in decoded_preds]
     r_decoded_labels = ["\n".join(nltk.sent_tokenize(label.strip())) for label in decoded_labels]
 
-    rouge_result = rouge_metric.compute(predictions=r_decoded_preds, references=r_decoded_labels, use_stemmer=True)
+    result = rouge_metric.compute(predictions=r_decoded_preds, references=r_decoded_labels, use_stemmer=True)
 
-    b_decoded_preds = [pred.split() for pred in decoded_preds]
-    b_decoded_labels = [[label.split()] for label in decoded_labels]
-    # print(b_decoded_labels)
+    b_decoded_preds = decoded_preds
+    b_decoded_labels = [[label] for label in decoded_labels] 
+
     bleu_result = bleu_metric.compute(predictions=b_decoded_preds, references=b_decoded_labels,)
-    
 
     prediction_lens = [np.count_nonzero(pred != tokenizer.pad_token_id) for pred in predictions]
 
-    result = {key: value.mid.fmeasure * 100 for key, value in rouge_result.items()}
+    result = {key: value * 100 for key, value in result.items()}
     result["gen_len"] = np.mean(prediction_lens)
-    try:
-        result["bleu"] = bleu_result['score']
-    except KeyError:
-        result["bleu"] = bleu_result['bleu']
+    result["bleu"] = bleu_result['bleu'] * 100
 
-    return {k: round(v, 4) for k, v in result.items()}
+    return result
 
 
 class GPTSummarization(torch.nn.Module):
@@ -173,6 +169,9 @@ class GPTSummarization(torch.nn.Module):
         result = {'rouge1': np.mean(rouges1), 'rouge2': np.mean(rouges2), 
                 'rougeL': np.mean(rougesL), 'rougeLsum': np.mean(rougesLsum),
                 'bleu': np.mean(bleu_), 'gen_len': np.mean(gen_len)}
+        
+        result = {k: round(v, 4) for k, v in result.items()}
+
         if need_wandb:
             wandb.log(result)
 

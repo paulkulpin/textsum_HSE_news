@@ -59,28 +59,24 @@ def compute_metrics(eval_pred, tokenizer, rouge_metric, bleu_metric):
     decoded_labels = tokenizer.batch_decode(labels, skip_special_tokens=True)
 
     # Rouge
-    decoded_preds = ["\n".join(nltk.sent_tokenize(pred.strip())) for pred in decoded_preds]
-    decoded_labels = ["\n".join(nltk.sent_tokenize(label.strip())) for label in decoded_labels]
-    rouge_result = rouge_metric.compute(predictions=decoded_preds, references=decoded_labels, use_stemmer=True)
+    r_decoded_preds = ["\n".join(nltk.sent_tokenize(pred.strip())) for pred in decoded_preds]
+    r_decoded_labels = ["\n".join(nltk.sent_tokenize(label.strip())) for label in decoded_labels]
+
+    result = rouge_metric.compute(predictions=r_decoded_preds, references=r_decoded_labels, use_stemmer=True)
 
     #BLEU
-    decoded_preds = [" ".join(nltk.sent_tokenize(pred.strip())) for pred in decoded_preds]
-    decoded_labels = [" ".join(nltk.sent_tokenize(label.strip())) for label in decoded_labels]
+    b_decoded_preds = decoded_preds
+    b_decoded_labels = [[label] for label in decoded_labels] 
 
-    bleu_result = bleu_metric.compute(predictions=[decoded_preds], references=[[decoded_labels]], )
+    bleu_result = bleu_metric.compute(predictions=b_decoded_preds, references=b_decoded_labels,)
 
-    # Extract a few results
-    result = {key: value.mid.fmeasure * 100 for key, value in rouge_result.items()}
-
-    # Add mean generated length
     prediction_lens = [np.count_nonzero(pred != tokenizer.pad_token_id) for pred in predictions]
-    result["gen_len"] = np.mean(prediction_lens)
-    try:
-        result["bleu"] = bleu_result['score']
-    except KeyError:
-        result["bleu"] = bleu_result['bleu']
 
-    return {k: round(v, 4) for k, v in result.items()}
+    result = {key: value * 100 for key, value in result.items()}
+    result["gen_len"] = np.mean(prediction_lens)
+    result["bleu"] = bleu_result['bleu'] * 100
+
+    return result
 
 
 class MBARTSummarization(torch.nn.Module):
@@ -160,6 +156,9 @@ class MBARTSummarization(torch.nn.Module):
         result = {'rouge1': np.mean(rouges1), 'rouge2': np.mean(rouges2),
                     'rougeL': np.mean(rougesL), 'rougeLsum': np.mean(rougesLsum),
                     'bleu': np.mean(bleu_), 'gen_len': np.mean(gen_len)}
+        
+        result = {k: round(v, 4) for k, v in result.items()}
+
         if need_wandb:
             wandb.log(result)
 
