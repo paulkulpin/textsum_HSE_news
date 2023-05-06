@@ -103,7 +103,7 @@ class GPTSummarization(torch.nn.Module):
         )
         return outputs.loss
 
-    def train_one_epoch(self, dataloader, optimizer, scheduler, accum_steps, use_mp, device, need_wandb, epoch, num_epochs, saving_steps_fraction, saving_dir):
+    def train_one_epoch(self, dataloader, optimizer, scheduler, accum_steps, use_mp, device, need_wandb, epoch, num_epochs, saving_steps_fraction, saving_dir, use_clipping):
         self.model.train()
         
         scaler = torch.cuda.amp.GradScaler() if use_mp else None
@@ -118,6 +118,8 @@ class GPTSummarization(torch.nn.Module):
                     loss = self.summarize(batch)
                 loss_item = loss.item()
                 scaler.scale(loss).backward()
+                if use_clipping:
+                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
                 if i % accum_steps == accum_steps - 1:
                     scaler.step(optimizer)
                     scaler.update()
@@ -126,6 +128,8 @@ class GPTSummarization(torch.nn.Module):
                 loss = self.summarize(batch)
                 loss_item = loss.item()
                 loss.backward()
+                if use_clipping:
+                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
                 if i % accum_steps == accum_steps - 1:
                     optimizer.step()
                     optimizer.zero_grad(set_to_none=True)

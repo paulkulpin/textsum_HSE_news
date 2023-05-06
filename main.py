@@ -60,6 +60,7 @@ if __name__ == "__main__":
     parser.add_argument('--weight_decay', type=int, help="weight_decay for AdamW optimizer", default=0.01)
     parser.add_argument('--num_warmup_steps', type=int, help="num_warmup_steps for cosine scheduler", default=1000)
     parser.add_argument('--num_cycles', type=int, help="num_cycles for cosine scheduler", default=0.5)
+    parser.add_argument('--use_clipping', type=bool, help="if clipping needed True/False", default=False)
 
     parser.add_argument('--max_input_length', type=int, help="Max length of input sequence for dataset.", default=1000)
     parser.add_argument('--max_target_length', type=int, help="Max length of target sequence for dataset.", default=100)
@@ -166,7 +167,7 @@ if __name__ == "__main__":
         scheduler = get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=args['num_warmup_steps'], num_training_steps=args['num_epochs'] * len(dataloader), num_cycles=args['num_cycles'])
 
         for epoch in range(args['num_epochs']):
-            sum_model.train_one_epoch(dataloader, optimizer, scheduler, accum_steps=args['accum_steps'], use_mp=args['use_mp'], device=device, need_wandb=args['need_wandb'], epoch=epoch, num_epochs=args['num_epochs'], saving_steps_fraction=args['saving_steps_fraction'], saving_dir=args['dir_for_in_between_savings'])
+            sum_model.train_one_epoch(dataloader, optimizer, scheduler, accum_steps=args['accum_steps'], use_mp=args['use_mp'], device=device, need_wandb=args['need_wandb'], epoch=epoch, num_epochs=args['num_epochs'], saving_steps_fraction=args['saving_steps_fraction'], saving_dir=args['dir_for_in_between_savings'], use_clipping=args['use_clipping'])
 
         torch.save(model.state_dict(), args['res_model_state_path'])
 
