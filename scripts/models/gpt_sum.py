@@ -81,7 +81,10 @@ def compute_metrics(eval_pred, tokenizer, rouge_metric, bleu_metric):
 
     result = {key: value * 100 for key, value in result.items()}
     result["gen_len"] = np.mean(prediction_lens)
-    result["bleu"] = bleu_result['bleu'] * 100
+    try:
+        result["bleu"] = bleu_result['score']
+    except KeyError:
+        result["bleu"] = bleu_result['bleu']
 
     return result
 
