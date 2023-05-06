@@ -101,7 +101,8 @@ if __name__ == "__main__":
         if args['model_state_path'] != "":
             conf = T5Config.from_pretrained(args['HF_model_name'])
             model = T5ForConditionalGeneration(config=conf)
-            model.load_state_dict(torch.load(args['model_state_path'])).to(device)
+            model.load_state_dict(torch.load(args['model_state_path']))
+            model.to(device)
         else:
             model = T5ForConditionalGeneration.from_pretrained(args['HF_model_name']).to(device)
 
@@ -117,7 +118,8 @@ if __name__ == "__main__":
         if args['model_state_path'] != "":
             conf = MBartConfig.from_pretrained(args['HF_model_name'])
             model = MBartForConditionalGeneration(config=conf)
-            model.load_state_dict(torch.load(args['model_state_path'])).to(device)
+            model.load_state_dict(torch.load(args['model_state_path']))
+            model.to(device)
         else:
             model = MBartForConditionalGeneration.from_pretrained(args['HF_model_name']).to(device)
 
@@ -133,7 +135,8 @@ if __name__ == "__main__":
         if args['model_state_path'] != "":
             conf = GPT2Config.from_pretrained(args['HF_model_name'])
             model = GPT2LMHeadModel(config=conf)
-            model.load_state_dict(torch.load(args['model_state_path'])).to(device)
+            model.load_state_dict(torch.load(args['model_state_path']))
+            model.to(device)
         else:
             model = GPT2LMHeadModel.from_pretrained(args['HF_model_name']).to(device)
 
