@@ -79,7 +79,7 @@ if __name__ == "__main__":
         print('>>>warnings will be ignored\n')
 
     assert args['csv_dataset_path'][-4:] == '.csv', f'dataset file [{args["csv_dataset_path"]}] must be .csv file.'
-    assert args['res_model_comments_path'][-4:] == '.txt', f'comments file [{args["res_model_comments_path"]}] must be .txt file.'
+    assert args['res_model_comments_path'][-5:] == '.json', f'comments file [{args["res_model_comments_path"]}] must be .txt file.'
 
     nltk.download('punkt')
     nltk.download('stopwords')
