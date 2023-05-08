@@ -44,6 +44,7 @@ if __name__ == "__main__":
     parser.add_argument('--random_seed', type=int, help="Random seed for torch, numpy.", default=101)
     parser.add_argument('--cuda_idx', type=int, help="cuda:idx", default=0)
     # additional base params
+    parser.add_argument('--num_workers', type=int, help="Number of workers for dataloader, etc.", default=0)
     parser.add_argument('--source_text_field_name', type=str, help="Name of field that includes article.", default="document")
     parser.add_argument('--annotation_field_name', type=str, help="Name of field that includes annotation", default="summary")
     #wandb params
@@ -112,7 +113,7 @@ if __name__ == "__main__":
         print('>>>downloaded tokenizer.\n')
 
         dataset = T5SumDataset(args['csv_dataset_path'], tokenizer, args['max_input_length'], args['max_target_length'], args['source_text_field_name'], args['annotation_field_name'], args['reduce_dataset'])
-        dataloader = torch.utils.data.DataLoader(dataset, collate_fn=partial(t5_collate_batch, tokenizer.pad_token_id), batch_size=args['batch_size'], shuffle=args['shuffle_dataset'], pin_memory=True)
+        dataloader = torch.utils.data.DataLoader(dataset, collate_fn=partial(t5_collate_batch, tokenizer.pad_token_id), batch_size=args['batch_size'], shuffle=args['shuffle_dataset'], pin_memory=True, num_workers=args['num_workers'])
         sum_model = T5Summarization(model)
 
     elif args['model_type'] == 'MBART':
@@ -129,7 +130,7 @@ if __name__ == "__main__":
         print('>>>downloaded tokenizer.\n')
 
         dataset = MBARTSumDataset(args['csv_dataset_path'], tokenizer, args['max_input_length'], args['max_target_length'], args['source_text_field_name'], args['annotation_field_name'], args['reduce_dataset'])
-        dataloader = torch.utils.data.DataLoader(dataset, collate_fn=partial(mbart_collate_batch, tokenizer.pad_token_id), batch_size=args['batch_size'], shuffle=args['shuffle_dataset'], pin_memory=True)
+        dataloader = torch.utils.data.DataLoader(dataset, collate_fn=partial(mbart_collate_batch, tokenizer.pad_token_id), batch_size=args['batch_size'], shuffle=args['shuffle_dataset'], pin_memory=True, num_workers=args['num_workers'])
         sum_model = MBARTSummarization(model)
 
     elif args['model_type'] == 'GPT':
@@ -151,7 +152,7 @@ if __name__ == "__main__":
             dataset = GPTSumDataset(args['csv_dataset_path'], tokenizer, args['max_input_length'], args['max_target_length'], args['source_text_field_name'], args['annotation_field_name'], ds_type='test')
         
         args['eval_max_length'] += args['max_input_length']
-        dataloader = torch.utils.data.DataLoader(dataset, collate_fn=partial(gpt_collate_batch, tokenizer.pad_token_id), batch_size=args['batch_size'], shuffle=args['shuffle_dataset'], pin_memory=True)
+        dataloader = torch.utils.data.DataLoader(dataset, collate_fn=partial(gpt_collate_batch, tokenizer.pad_token_id), batch_size=args['batch_size'], shuffle=args['shuffle_dataset'], pin_memory=True, num_workers=args['num_workers'])
         sum_model = GPTSummarization(model)
     else:
         raise NotImplementedError(f'unknown model_type {args["model_type"]}')
