@@ -16,6 +16,7 @@ import warnings
 import json
 
 from scripts.models.t5_sum import T5SumDataset, T5Summarization, t5_collate_batch
+from scripts.models.fred_sum import FREDSumDataset, FREDSummarization, fred_collate_batch
 from scripts.models.mbart_sum import MBARTSumDataset, MBARTSummarization, mbart_collate_batch
 from scripts.models.gpt_sum import GPTSumDataset, GPTSummarization, gpt_collate_batch
 
@@ -94,7 +95,7 @@ if __name__ == "__main__":
     device = torch.device(f'cuda:{args["cuda_idx"]}' if torch.cuda.is_available() else 'cpu')
     print(f'>>>device == {device}.\n')
 
-    if args['model_type'] == 'T5':
+    if args['model_type'] == 'ruT5':
         if args['model_state_path'] != "":
             conf = T5Config.from_pretrained(args['HF_model_name'])
             model = T5ForConditionalGeneration(config=conf)
@@ -110,6 +111,23 @@ if __name__ == "__main__":
         dataset = T5SumDataset(args['csv_dataset_path'], tokenizer, args['max_input_length'], args['max_target_length'], args['source_text_field_name'], args['annotation_field_name'], args['reduce_dataset'])
         dataloader = torch.utils.data.DataLoader(dataset, collate_fn=partial(t5_collate_batch, tokenizer.pad_token_id), batch_size=args['batch_size'], shuffle=args['shuffle_dataset'], pin_memory=True, num_workers=args['num_workers'])
         sum_model = T5Summarization(model)
+
+    elif args['model_type'] == 'FRED':
+        if args['model_state_path'] != "":
+            conf = T5Config.from_pretrained(args['HF_model_name'])
+            model = T5ForConditionalGeneration(config=conf)
+            model.load_state_dict(torch.load(args['model_state_path']))
+            model.to(device)
+        else:
+            model = T5ForConditionalGeneration.from_pretrained(args['HF_model_name']).to(device)
+
+        print('>>>downloaded model.\n')
+        tokenizer = GPT2Tokenizer.from_pretrained(args['HF_model_name'], eos_token='</s>')
+        print('>>>downloaded tokenizer.\n')
+
+        dataset = FREDSumDataset(args['csv_dataset_path'], tokenizer, args['max_input_length'], args['max_target_length'], args['source_text_field_name'], args['annotation_field_name'], args['reduce_dataset'])
+        dataloader = torch.utils.data.DataLoader(dataset, collate_fn=partial(fred_collate_batch, tokenizer.pad_token_id), batch_size=args['batch_size'], shuffle=args['shuffle_dataset'], pin_memory=True, num_workers=args['num_workers'])
+        sum_model = FREDSummarization(model)
 
     elif args['model_type'] == 'MBART':
         if args['model_state_path'] != "":
@@ -128,7 +146,7 @@ if __name__ == "__main__":
         dataloader = torch.utils.data.DataLoader(dataset, collate_fn=partial(mbart_collate_batch, tokenizer.pad_token_id), batch_size=args['batch_size'], shuffle=args['shuffle_dataset'], pin_memory=True, num_workers=args['num_workers'])
         sum_model = MBARTSummarization(model)
 
-    elif args['model_type'] == 'GPT':
+    elif args['model_type'] == 'ruGPT':
         if args['model_state_path'] != "":
             conf = GPT2Config.from_pretrained(args['HF_model_name'])
             model = GPT2LMHeadModel(config=conf)
@@ -156,7 +174,6 @@ if __name__ == "__main__":
     if args['need_wandb']:
         wandb.login(key=args['wandb_key'])
         wandb.init(project=args['wandb_project_name'], config=args, name=args['wandb_run_name'])
-
 
     if args['action'] == 'training':
         with open(args['res_model_comments_path'], 'w') as f:
