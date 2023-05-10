@@ -94,11 +94,6 @@ if __name__ == "__main__":
     device = torch.device(f'cuda:{args["cuda_idx"]}' if torch.cuda.is_available() else 'cpu')
     print(f'>>>device == {device}.\n')
 
-    if args['need_wandb']:
-        wandb.login(key=args['wandb_key'])
-        wandb.init(project=args['wandb_project_name'], config=args, name=args['wandb_run_name'])
-
-
     if args['model_type'] == 'T5':
         if args['model_state_path'] != "":
             conf = T5Config.from_pretrained(args['HF_model_name'])
@@ -157,6 +152,10 @@ if __name__ == "__main__":
         sum_model = GPTSummarization(model)
     else:
         raise NotImplementedError(f'unknown model_type {args["model_type"]}')
+
+    if args['need_wandb']:
+        wandb.login(key=args['wandb_key'])
+        wandb.init(project=args['wandb_project_name'], config=args, name=args['wandb_run_name'])
 
 
     if args['action'] == 'training':
