@@ -95,6 +95,18 @@ if __name__ == "__main__":
     device = torch.device(f'cuda:{args["cuda_idx"]}' if torch.cuda.is_available() else 'cpu')
     print(f'>>>device == {device}.\n')
 
+    if args['HF_model_name'] == '':
+        if args['model_type'] == 'ruT5':
+            args['HF_model_name'] = 'IlyaGusev/rut5_base_sum_gazeta'
+        elif args['model_type'] == 'FRED':
+            args['HF_model_name'] = 'ai-forever/FRED-T5-large'
+        elif args['model_type'] == 'MBART':
+            args['HF_model_name'] = 'IlyaGusev/mbart_ru_sum_gazeta'
+        elif args['model_type'] == 'ruGPT':
+            args['HF_model_name'] = 'IlyaGusev/rugpt3medium_sum_gazeta'
+        else:
+            raise NotImplementedError(f'{args["model_type"]}')
+    
     if args['model_type'] == 'ruT5':
         if args['model_state_path'] != "":
             conf = T5Config.from_pretrained(args['HF_model_name'])
