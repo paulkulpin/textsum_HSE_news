@@ -25,7 +25,17 @@ def preprocess_function(row, ds_type, tokenizer, max_input_length, max_target_le
 
 
 class GPTSumDataset(torch.utils.data.Dataset):
-    def __init__(self, path, tokenizer, max_input_length, max_target_length, document_field_name, summary_field_name, reduce_part, ds_type='train'):
+    def __init__(
+            self, 
+            path, 
+            tokenizer, 
+            max_input_length, 
+            max_target_length, 
+            document_field_name, 
+            summary_field_name, 
+            reduce_part, 
+            ds_type='train'
+    ):
         super().__init__()
         assert path[-4:] == '.csv', 'dataset file is not a csv file'
         self.path = path
@@ -33,7 +43,13 @@ class GPTSumDataset(torch.utils.data.Dataset):
         df = pd.read_csv(self.path)
         self.data = []
         for ind in tqdm(df.index, total=len(df), desc='Creating dataset'):
-            self.data += [preprocess_function(df.loc[ind], ds_type, tokenizer, max_input_length, max_target_length, document_field_name, summary_field_name)]
+            self.data += [preprocess_function(df.loc[ind], 
+                                              ds_type, 
+                                              tokenizer, 
+                                              max_input_length, 
+                                              max_target_length, 
+                                              document_field_name, 
+                                              summary_field_name)]
             if reduce_part != 100.0 and ind > (len(df) / 100) * reduce_part:
                 break
         del df
@@ -60,7 +76,8 @@ def gpt_collate_batch(pad_id, batch):
 
 def compute_metrics(eval_pred, tokenizer, rouge_metric, bleu_metric):
     predictions, labels = eval_pred
-    decoded_preds = tokenizer.batch_decode(predictions, skip_special_tokens=False)
+    decoded_preds = tokenizer.batch_decode(predictions, 
+                                           skip_special_tokens=False)
 
     for i in range(len(decoded_preds)):
         pred = decoded_preds[i].split(tokenizer.sep_token)[1]
@@ -69,17 +86,25 @@ def compute_metrics(eval_pred, tokenizer, rouge_metric, bleu_metric):
     labels = np.where(labels != -100, labels, tokenizer.pad_token_id)
     decoded_labels = tokenizer.batch_decode(labels, skip_special_tokens=False)
 
-    r_decoded_preds = ["\n".join(nltk.sent_tokenize(pred.strip())) for pred in decoded_preds]
-    r_decoded_labels = ["\n".join(nltk.sent_tokenize(label.strip())) for label in decoded_labels]
+    r_decoded_preds = ["\n".join(nltk.sent_tokenize(pred.strip())) 
+                       for pred in decoded_preds]
+    r_decoded_labels = ["\n".join(nltk.sent_tokenize(label.strip())) 
+                        for label in decoded_labels]
 
-    result = rouge_metric.compute(predictions=r_decoded_preds, references=r_decoded_labels, use_stemmer=True)
+    result = rouge_metric.compute(
+        predictions=r_decoded_preds, 
+        references=r_decoded_labels, 
+        use_stemmer=True)
 
     b_decoded_preds = decoded_preds
     b_decoded_labels = [[label] for label in decoded_labels] 
 
-    bleu_result = bleu_metric.compute(predictions=b_decoded_preds, references=b_decoded_labels,)
+    bleu_result = bleu_metric.compute(
+        predictions=b_decoded_preds, 
+        references=b_decoded_labels,)
 
-    prediction_lens = [np.count_nonzero(pred != tokenizer.pad_token_id) for pred in predictions]
+    prediction_lens = [np.count_nonzero(pred != tokenizer.pad_token_id) 
+                       for pred in predictions]
 
     result = {key: value * 100 for key, value in result.items()}
     result["gen_len"] = np.mean(prediction_lens)
@@ -103,7 +128,21 @@ class GPTSummarization(torch.nn.Module):
         )
         return outputs.loss
 
-    def train_one_epoch(self, dataloader, optimizer, scheduler, accum_steps, use_mp, device, need_wandb, epoch, num_epochs, saving_steps_fraction, saving_dir, use_clipping):
+    def train_one_epoch(
+            self, 
+            dataloader, 
+            optimizer, 
+            scheduler, 
+            accum_steps, 
+            use_mp, 
+            device, 
+            need_wandb, 
+            epoch, 
+            num_epochs, 
+            saving_steps_fraction, 
+            saving_dir, 
+            use_clipping
+    ):
         self.model.train()
         
         scaler = torch.cuda.amp.GradScaler() if use_mp else None
@@ -139,11 +178,13 @@ class GPTSummarization(torch.nn.Module):
 
             if i % part == part - 1:
                 if saving_dir == '':
-                    torch.save(self.model.state_dict(), f'model_state_ep{epoch+1}_step{i}.pth')
+                    torch.save(self.model.state_dict(), 
+                               f'model_state_ep{epoch+1}_step{i}.pth')
                 else:
                     if saving_dir[-1] != '/':
                         saving_dir += '/'
-                    torch.save(self.model.state_dict(), saving_dir + f'model_state_ep{epoch+1}_step{i}.pth')
+                    torch.save(self.model.state_dict(), 
+                               saving_dir + f'model_state_ep{epoch+1}_step{i}.pth')
             if need_wandb:
                 wandb.log({
                     'Loss': loss_item,
@@ -153,7 +194,17 @@ class GPTSummarization(torch.nn.Module):
             scheduler.step()
 
 
-    def evaluate(self, tokenizer, dataloader, rouge_metric, bleu_metric, device, min_length, max_length, need_wandb=False):
+    def evaluate(
+            self, 
+            tokenizer, 
+            dataloader, 
+            rouge_metric, 
+            bleu_metric, 
+            device, 
+            min_length, 
+            max_length, 
+            need_wandb=False
+    ):
         self.model.eval()
 
         rouges1, rouges2, rougesL, rougesLsum, gen_len, bleu_ = [], [], [], [], [], []
@@ -163,12 +214,20 @@ class GPTSummarization(torch.nn.Module):
                 batch[k] = v.to(device)
 
             with torch.no_grad():
-                output_sequences = self.model.generate(input_ids=batch['input_ids'], do_sample=False, max_length=max_length, min_length=min_length)
+                output_sequences = self.model.generate(
+                    input_ids=batch['input_ids'], 
+                    do_sample=False, 
+                    max_length=max_length, 
+                    min_length=min_length)
 
             for k, v in batch.items():
                 batch[k] = v.to('cpu')
 
-            metrics = compute_metrics((output_sequences.cpu(), batch['labels']), tokenizer, rouge_metric, bleu_metric) #['rouge1']
+            metrics = compute_metrics(
+                (output_sequences.cpu(), batch['labels']), 
+                tokenizer, 
+                rouge_metric, 
+                bleu_metric) #['rouge1']
             
             rouges1.append(metrics['rouge1'])
             rouges2.append(metrics['rouge2'])
@@ -177,9 +236,12 @@ class GPTSummarization(torch.nn.Module):
             gen_len.append(metrics['gen_len'])
             bleu_.append(metrics['bleu'])
 
-        result = {'rouge1': np.mean(rouges1), 'rouge2': np.mean(rouges2), 
-                'rougeL': np.mean(rougesL), 'rougeLsum': np.mean(rougesLsum),
-                'bleu': np.mean(bleu_), 'gen_len': np.mean(gen_len)}
+        result = {'rouge1': np.mean(rouges1), 
+                  'rouge2': np.mean(rouges2), 
+                  'rougeL': np.mean(rougesL), 
+                  'rougeLsum': np.mean(rougesLsum),
+                  'bleu': np.mean(bleu_), 
+                  'gen_len': np.mean(gen_len)}
         
         result = {k: round(v, 4) for k, v in result.items()}
 

@@ -18,9 +18,13 @@ if __name__ == "__main__":
 
     df = pd.read_csv(args['path_to_csv'], sep=args['pandas_csv_sep'])
 
-    train_df, test_df = train_test_split(df, test_size=args['test_size'], shuffle=True)
+    train_df, test_df = train_test_split(df, 
+                                         test_size=args['test_size'], 
+                                         shuffle=True)
     if args['val_size'] > 0.0:
-        train_df, val_df = train_test_split(train_df, test_size=args['val_size'] / (1 - args['test_size']), shuffle=True)
+        train_df, val_df = train_test_split(train_df, 
+                                            test_size=args['val_size'] / (1 - args['test_size']), 
+                                            shuffle=True)
     else:
         val_df = None
 

@@ -120,8 +120,19 @@ if __name__ == "__main__":
         tokenizer = T5Tokenizer.from_pretrained(args['HF_model_name'])
         print('>>>downloaded tokenizer.\n')
 
-        dataset = T5SumDataset(args['csv_dataset_path'], tokenizer, args['max_input_length'], args['max_target_length'], args['source_text_field_name'], args['annotation_field_name'], args['reduce_dataset'])
-        dataloader = torch.utils.data.DataLoader(dataset, collate_fn=partial(t5_collate_batch, tokenizer.pad_token_id), batch_size=args['batch_size'], shuffle=args['shuffle_dataset'], pin_memory=True, num_workers=args['num_workers'])
+        dataset = T5SumDataset(args['csv_dataset_path'], 
+                               tokenizer, 
+                               args['max_input_length'], 
+                               args['max_target_length'], 
+                               args['source_text_field_name'], 
+                               args['annotation_field_name'], 
+                               args['reduce_dataset'])
+        dataloader = torch.utils.data.DataLoader(dataset, 
+                                                 collate_fn=partial(t5_collate_batch, tokenizer.pad_token_id), 
+                                                 batch_size=args['batch_size'], 
+                                                 shuffle=args['shuffle_dataset'], 
+                                                 pin_memory=True, 
+                                                 num_workers=args['num_workers'])
         sum_model = T5Summarization(model)
 
     elif args['model_type'] == 'FRED':
@@ -137,8 +148,19 @@ if __name__ == "__main__":
         tokenizer = GPT2Tokenizer.from_pretrained(args['HF_model_name'], eos_token='</s>')
         print('>>>downloaded tokenizer.\n')
 
-        dataset = FREDSumDataset(args['csv_dataset_path'], tokenizer, args['max_input_length'], args['max_target_length'], args['source_text_field_name'], args['annotation_field_name'], args['reduce_dataset'])
-        dataloader = torch.utils.data.DataLoader(dataset, collate_fn=partial(fred_collate_batch, tokenizer.pad_token_id), batch_size=args['batch_size'], shuffle=args['shuffle_dataset'], pin_memory=True, num_workers=args['num_workers'])
+        dataset = FREDSumDataset(args['csv_dataset_path'], 
+                                 tokenizer, 
+                                 args['max_input_length'], 
+                                 args['max_target_length'], 
+                                 args['source_text_field_name'], 
+                                 args['annotation_field_name'], 
+                                 args['reduce_dataset'])
+        dataloader = torch.utils.data.DataLoader(dataset, 
+                                                 collate_fn=partial(fred_collate_batch, tokenizer.pad_token_id), 
+                                                 batch_size=args['batch_size'], 
+                                                 shuffle=args['shuffle_dataset'], 
+                                                 pin_memory=True, 
+                                                 num_workers=args['num_workers'])
         sum_model = FREDSummarization(model)
 
     elif args['model_type'] == 'MBART':
@@ -154,8 +176,19 @@ if __name__ == "__main__":
         tokenizer = MBartTokenizer.from_pretrained(args['HF_model_name'])
         print('>>>downloaded tokenizer.\n')
 
-        dataset = MBARTSumDataset(args['csv_dataset_path'], tokenizer, args['max_input_length'], args['max_target_length'], args['source_text_field_name'], args['annotation_field_name'], args['reduce_dataset'])
-        dataloader = torch.utils.data.DataLoader(dataset, collate_fn=partial(mbart_collate_batch, tokenizer.pad_token_id), batch_size=args['batch_size'], shuffle=args['shuffle_dataset'], pin_memory=True, num_workers=args['num_workers'])
+        dataset = MBARTSumDataset(args['csv_dataset_path'], 
+                                  tokenizer, 
+                                  args['max_input_length'], 
+                                  args['max_target_length'], 
+                                  args['source_text_field_name'], 
+                                  args['annotation_field_name'], 
+                                  args['reduce_dataset'])
+        dataloader = torch.utils.data.DataLoader(dataset, 
+                                                 collate_fn=partial(mbart_collate_batch, tokenizer.pad_token_id), 
+                                                 batch_size=args['batch_size'], 
+                                                 shuffle=args['shuffle_dataset'], 
+                                                 pin_memory=True, 
+                                                 num_workers=args['num_workers'])
         sum_model = MBARTSummarization(model)
 
     elif args['model_type'] == 'ruGPT':
@@ -172,13 +205,31 @@ if __name__ == "__main__":
         print('>>>downloaded tokenizer.\n')
         
         if args['action'] == 'training':
-            dataset = GPTSumDataset(args['csv_dataset_path'], tokenizer, args['max_input_length'], args['max_target_length'], args['source_text_field_name'], args['annotation_field_name'], args['reduce_dataset'], ds_type='train')
+            dataset = GPTSumDataset(args['csv_dataset_path'], 
+                                    tokenizer, 
+                                    args['max_input_length'], 
+                                    args['max_target_length'], 
+                                    args['source_text_field_name'], 
+                                    args['annotation_field_name'], 
+                                    args['reduce_dataset'], 
+                                    ds_type='train')
         else:
-            dataset = GPTSumDataset(args['csv_dataset_path'], tokenizer, args['max_input_length'], args['max_target_length'], args['source_text_field_name'], args['annotation_field_name'], ds_type='test')
+            dataset = GPTSumDataset(args['csv_dataset_path'], 
+                                    tokenizer, 
+                                    args['max_input_length'], 
+                                    args['max_target_length'], 
+                                    args['source_text_field_name'], 
+                                    args['annotation_field_name'], 
+                                    ds_type='test')
         
         args['eval_max_length'] += args['max_input_length']
         args['eval_min_length'] += args['max_input_length']
-        dataloader = torch.utils.data.DataLoader(dataset, collate_fn=partial(gpt_collate_batch, tokenizer.pad_token_id), batch_size=args['batch_size'], shuffle=args['shuffle_dataset'], pin_memory=True, num_workers=args['num_workers'])
+        dataloader = torch.utils.data.DataLoader(dataset, 
+                                                 collate_fn=partial(gpt_collate_batch, tokenizer.pad_token_id), 
+                                                 batch_size=args['batch_size'], 
+                                                 shuffle=args['shuffle_dataset'], 
+                                                 pin_memory=True, 
+                                                 num_workers=args['num_workers'])
         sum_model = GPTSummarization(model)
     else:
         raise NotImplementedError(f'unknown model_type {args["model_type"]}')
@@ -193,16 +244,39 @@ if __name__ == "__main__":
             args['tokenizer_tp'] = 'T5Tokenizer'
             json.dump(args, f, indent="")
 
-        optimizer = torch.optim.AdamW(sum_model.parameters(), lr=args['lr'], weight_decay=args['weight_decay'])
-        scheduler = get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=args['num_warmup_steps'], num_training_steps=args['num_epochs'] * len(dataloader), num_cycles=args['num_cycles'])
+        optimizer = torch.optim.AdamW(sum_model.parameters(), 
+                                      lr=args['lr'], 
+                                      weight_decay=args['weight_decay'])
+        scheduler = get_cosine_schedule_with_warmup(optimizer, 
+                                                    num_warmup_steps=args['num_warmup_steps'], 
+                                                    num_training_steps=args['num_epochs'] * len(dataloader), 
+                                                    num_cycles=args['num_cycles'])
 
         for epoch in range(args['num_epochs']):
-            sum_model.train_one_epoch(dataloader, optimizer, scheduler, accum_steps=args['accum_steps'], use_mp=args['use_mp'], device=device, need_wandb=args['need_wandb'], epoch=epoch, num_epochs=args['num_epochs'], saving_steps_fraction=args['saving_steps_fraction'], saving_dir=args['dir_for_in_between_savings'], use_clipping=args['use_clipping'])
+            sum_model.train_one_epoch(dataloader, 
+                                      optimizer, 
+                                      scheduler, 
+                                      accum_steps=args['accum_steps'], 
+                                      use_mp=args['use_mp'], 
+                                      device=device, 
+                                      need_wandb=args['need_wandb'], 
+                                      epoch=epoch, 
+                                      num_epochs=args['num_epochs'], 
+                                      saving_steps_fraction=args['saving_steps_fraction'], 
+                                      saving_dir=args['dir_for_in_between_savings'], 
+                                      use_clipping=args['use_clipping'])
 
         torch.save(model.state_dict(), args['res_model_state_path'])
 
     elif args['action'] == 'evaluating':
-        eval_res = sum_model.evaluate(tokenizer=tokenizer, dataloader=dataloader, bleu_metric=bleu_metric, rouge_metric=rouge_metric, device=device, need_wandb=args['need_wandb'], min_length=args['eval_min_length'], max_length=args['eval_max_length'])
+        eval_res = sum_model.evaluate(tokenizer=tokenizer, 
+                                      dataloader=dataloader, 
+                                      bleu_metric=bleu_metric, 
+                                      rouge_metric=rouge_metric, 
+                                      device=device, 
+                                      need_wandb=args['need_wandb'], 
+                                      min_length=args['eval_min_length'], 
+                                      max_length=args['eval_max_length'])
         print('\n\n################ EVALUATION RESULT ################')
         print(eval_res)
         print('###################################################\n\n')
