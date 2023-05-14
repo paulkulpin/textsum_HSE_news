@@ -15,11 +15,11 @@ import evaluate
 import warnings
 import json
 
-from scripts.models.t5_sum import T5SumDataset, T5Summarization, t5_collate_batch
+from scripts.models.rut5_sum import ruT5SumDataset, ruT5Summarization, rut5_collate_batch
 from scripts.models.fred_sum import FREDSumDataset, FREDSummarization, fred_collate_batch
 from scripts.models.mbart_sum import MBARTSumDataset, MBARTSummarization, mbart_collate_batch
-from scripts.models.gpt_sum import GPTSumDataset, GPTSummarization, gpt_collate_batch
-
+from scripts.models.rugpt_sum import ruGPTSumDataset, ruGPTSummarization, rugpt_collate_batch
+from scripts.models.mt5_sum import mT5SumDataset, mT5Summarization, mt5_collate_batch
 
 
 def set_random_seed(seed):
@@ -29,11 +29,10 @@ def set_random_seed(seed):
     np.random.seed(seed)
 
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process scrapped json.')
     parser.add_argument('--action', type=str, help="training/evaluating", default="evaluating")
-    parser.add_argument('--model_type', type=str, help="T5/GPT/MBART", default="T5")
+    parser.add_argument('--model_type', type=str, help="ruT5/ruGPT/mBART/mT5/FRED", default="ruT5")
     #base params
     parser.add_argument('--csv_dataset_path', type=str, help="Full path to dataset csv file.", default="processed_news.csv")
     parser.add_argument('--shuffle_dataset', type=bool, help="if dataset suffling needed True/False", default=False)
@@ -120,7 +119,7 @@ if __name__ == "__main__":
         tokenizer = T5Tokenizer.from_pretrained(args['HF_model_name'])
         print('>>>downloaded tokenizer.\n')
 
-        dataset = T5SumDataset(args['csv_dataset_path'], 
+        dataset = ruT5SumDataset(args['csv_dataset_path'], 
                                tokenizer, 
                                args['max_input_length'], 
                                args['max_target_length'], 
@@ -128,12 +127,40 @@ if __name__ == "__main__":
                                args['annotation_field_name'], 
                                args['reduce_dataset'])
         dataloader = torch.utils.data.DataLoader(dataset, 
-                                                 collate_fn=partial(t5_collate_batch, tokenizer.pad_token_id), 
+                                                 collate_fn=partial(rut5_collate_batch, tokenizer.pad_token_id), 
                                                  batch_size=args['batch_size'], 
                                                  shuffle=args['shuffle_dataset'], 
                                                  pin_memory=True, 
                                                  num_workers=args['num_workers'])
-        sum_model = T5Summarization(model)
+        sum_model = ruT5Summarization(model)
+
+    elif args['model_type'] == 'mT5':
+        if args['model_state_path'] != "":
+            conf = T5Config.from_pretrained(args['HF_model_name'])
+            model = T5ForConditionalGeneration(config=conf)
+            model.load_state_dict(torch.load(args['model_state_path']))
+            model.to(device)
+        else:
+            model = T5ForConditionalGeneration.from_pretrained(args['HF_model_name']).to(device)
+
+        print('>>>downloaded model.\n')
+        tokenizer = T5Tokenizer.from_pretrained(args['HF_model_name'])
+        print('>>>downloaded tokenizer.\n')
+
+        dataset = mT5SumDataset(args['csv_dataset_path'], 
+                               tokenizer, 
+                               args['max_input_length'], 
+                               args['max_target_length'], 
+                               args['source_text_field_name'], 
+                               args['annotation_field_name'], 
+                               args['reduce_dataset'])
+        dataloader = torch.utils.data.DataLoader(dataset, 
+                                                 collate_fn=partial(mt5_collate_batch, tokenizer.pad_token_id), 
+                                                 batch_size=args['batch_size'], 
+                                                 shuffle=args['shuffle_dataset'], 
+                                                 pin_memory=True, 
+                                                 num_workers=args['num_workers'])
+        sum_model = mT5Summarization(model)
 
     elif args['model_type'] == 'FRED':
         if args['model_state_path'] != "":
@@ -205,7 +232,7 @@ if __name__ == "__main__":
         print('>>>downloaded tokenizer.\n')
         
         if args['action'] == 'training':
-            dataset = GPTSumDataset(args['csv_dataset_path'], 
+            dataset = ruGPTSumDataset(args['csv_dataset_path'], 
                                     tokenizer, 
                                     args['max_input_length'], 
                                     args['max_target_length'], 
@@ -214,7 +241,7 @@ if __name__ == "__main__":
                                     args['reduce_dataset'], 
                                     ds_type='train')
         else:
-            dataset = GPTSumDataset(args['csv_dataset_path'], 
+            dataset = ruGPTSumDataset(args['csv_dataset_path'], 
                                     tokenizer, 
                                     args['max_input_length'], 
                                     args['max_target_length'], 
@@ -225,12 +252,12 @@ if __name__ == "__main__":
         args['eval_max_length'] += args['max_input_length']
         args['eval_min_length'] += args['max_input_length']
         dataloader = torch.utils.data.DataLoader(dataset, 
-                                                 collate_fn=partial(gpt_collate_batch, tokenizer.pad_token_id), 
+                                                 collate_fn=partial(rugpt_collate_batch, tokenizer.pad_token_id), 
                                                  batch_size=args['batch_size'], 
                                                  shuffle=args['shuffle_dataset'], 
                                                  pin_memory=True, 
                                                  num_workers=args['num_workers'])
-        sum_model = GPTSummarization(model)
+        sum_model = ruGPTSummarization(model)
     else:
         raise NotImplementedError(f'unknown model_type {args["model_type"]}')
 

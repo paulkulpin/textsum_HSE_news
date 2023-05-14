@@ -5,16 +5,18 @@ from tqdm import tqdm
 import wandb
 import pandas as pd
 from torch.nn.utils.rnn import pad_sequence
+import re
 
+WHITESPACE_HANDLER = lambda k: re.sub('\s+', ' ', re.sub('\n+', ' ', k.strip()))
 
 def preprocess_function(row, tokenizer, max_input_length, max_target_length, document_field_name, summary_field_name):
-    model_inputs = tokenizer(text=row[document_field_name], max_length=max_input_length, truncation=True)
+    model_inputs = tokenizer(text=WHITESPACE_HANDLER(row[document_field_name]), max_length=max_input_length, truncation=True)
     labels = tokenizer(text_target=row[summary_field_name], max_length=max_target_length, truncation=True)
     model_inputs["labels"] = labels["input_ids"]
     return model_inputs
 
 
-class T5SumDataset(torch.utils.data.Dataset):
+class mT5SumDataset(torch.utils.data.Dataset):
     def __init__(
             self, 
             path, 
@@ -48,7 +50,7 @@ class T5SumDataset(torch.utils.data.Dataset):
         return self.data[idx]
 
 
-def t5_collate_batch(pad_id, batch):
+def mt5_collate_batch(pad_id, batch):
     input_ids = []
     labels = []
     for sample in batch:
@@ -66,7 +68,7 @@ def t5_collate_batch(pad_id, batch):
 
 def compute_metrics(eval_pred, tokenizer, rouge_metric, bleu_metric):
     predictions, labels = eval_pred
-    decoded_preds = tokenizer.batch_decode(predictions, skip_special_tokens=True)
+    decoded_preds = tokenizer.batch_decode(predictions, skip_special_tokens=True, clean_up_tokenization_spaces=False)
 
     # Replace -100 in the labels as we can't decode them.
     labels = np.where(labels != -100, labels, tokenizer.pad_token_id)
@@ -103,7 +105,7 @@ def compute_metrics(eval_pred, tokenizer, rouge_metric, bleu_metric):
     return result
 
 
-class T5Summarization(torch.nn.Module):
+class mT5Summarization(torch.nn.Module):
     def __init__(self, model):
         super().__init__()
         self.model = model
@@ -115,72 +117,6 @@ class T5Summarization(torch.nn.Module):
             attention_mask=batch['attention_mask']
         )
         return outputs.loss
-
-    def train_one_epoch(
-            self, 
-            dataloader, 
-            optimizer, 
-            scheduler, 
-            accum_steps, 
-            use_mp, 
-            device, 
-            need_wandb, 
-            epoch, 
-            num_epochs, 
-            saving_steps_fraction, 
-            saving_dir, 
-            use_clipping
-    ):
-        self.model.train()
-
-        scaler = torch.cuda.amp.GradScaler() if use_mp else None
-        part = int(len(dataloader) * saving_steps_fraction)
-        if part == 0:
-            part = 2
-
-        for i, batch in tqdm(enumerate(dataloader), total=len(dataloader), desc=f'Trainig {epoch}/{num_epochs}'):
-            for k, v in batch.items():
-                batch[k] = v.to(device)
-
-            if use_mp:
-                with torch.autocast(device_type='cuda', dtype=torch.float16):
-                    loss = self.summarize(batch)
-                loss_item = loss.item()
-                scaler.scale(loss).backward()
-                if use_clipping:
-                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
-                
-                if i % accum_steps == accum_steps - 1:
-                    scaler.step(optimizer)
-                    scaler.update()
-                    optimizer.zero_grad(set_to_none=True)
-            else:
-                loss = self.summarize(batch)
-                loss_item = loss.item()
-                loss.backward()
-                if use_clipping:
-                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
-                
-                if i % accum_steps == accum_steps - 1:
-                    optimizer.step()
-                    optimizer.zero_grad(set_to_none=True)
-
-            if i % part == part - 1:
-                if saving_dir == '':
-                    torch.save(self.model.state_dict(), 
-                               f'model_state_ep{epoch+1}_step{i}.pth')
-                else:
-                    if saving_dir[-1] != '/':
-                        saving_dir += '/'
-                    torch.save(self.model.state_dict(), 
-                               saving_dir + f'model_state_ep{epoch+1}_step{i}.pth')
-            if need_wandb:
-                wandb.log({
-                    'Loss': loss_item,
-                    'Learning_Rate': scheduler.get_last_lr()[0]
-                })
-
-            scheduler.step()
             
     def evaluate(
             self, 
