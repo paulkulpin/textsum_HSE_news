@@ -1,4 +1,6 @@
 streamlit==1.10.0 
+altair==4.2.2
+pyperclip==1.8.2
 requests==2.27.0
 pandas==1.5.3
 torch==2.0.0
