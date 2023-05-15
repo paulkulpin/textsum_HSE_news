@@ -51,9 +51,11 @@ if __name__ == "__main__":
 
     df[args['source_text_field_name']].replace(['', '-', '\r\n'], np.nan, inplace=True)
     df[args['annotation_field_name']].replace(['', '-', '\r\n'], np.nan, inplace=True)
+    
     df = df[[args['source_text_field_name'], args['annotation_field_name']]] \
-        .rename(columns={args['source_text_field_name']: "document", args['annotation_field_name']: "summary"})
-    df = df.dropna().reset_index(drop=True)
+        .rename(columns={args['source_text_field_name']: "document", args['annotation_field_name']: "summary"}) \
+        .dropna().reset_index(drop=True)
+    
     df = df[df['document'].str.len() <= args['max_document_char_length']]
     df = df[df['document'].str.len() >= args['min_document_char_length']]
     df = df[df['summary'].str.len() <= args['max_summary_char_length']]
