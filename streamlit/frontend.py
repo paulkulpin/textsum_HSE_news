@@ -47,7 +47,7 @@ st.title("Нейросетевое аннотирование текста",)
 
 
 header1 = st.header("Введите текст статьи:")
-text = st.text_area(" ")
+text = st.text_area("Введите текст статьи:", label_visibility="collapsed")
 
 model_name = st.selectbox("Выберите модель генерации:", options=["ruT5-base", "FRED-T5-Large", "mBART"])
 
