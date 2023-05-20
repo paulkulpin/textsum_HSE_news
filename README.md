@@ -45,35 +45,35 @@ python scripts/dataset_utils/dataprocess.py \
 ### Training:
 ```bash
 python scripts/main.py \
-    --action training \ #action to
-    --model_type FRED \
-    --csv_dataset_path <path> \
-    --shuffle_dataset True \
-    --reduce_dataset 100.0 \
-    --model_state_path <path> \
-    --res_model_state_path <path> \
-    --res_model_comments_path <path> \
-    --HF_model_name FRED-T5-large \
-    --random_seed 101 \
-    --cuda_idx 0 \
-    --num_workers 0 \
-    --source_text_field_name document \
-    --annotation_field_name summary \
-    --need_wandb True \
-    --wandb_key <key> \
+    --action training \ #   Action to execute [training/evaluate]. (obligatory)
+    --model_type FRED \ #   Model name [ruT5/ruGPT/mBART/FRED]. (obligatory)
+    --csv_dataset_path <path> \ #   Full path to dataset csv file. (obligatory)
+    --HF_model_name FRED-T5-large \ #   Hugging Face model/tokenizer name. (obligatory)
+    --shuffle_dataset True \    #   If dataset shuffling needed? [True/False]
+    --reduce_dataset 100.0 \    #   Percentage part of dataset to reduce. [0.0 - 100.0]
+    --model_state_path <path> \ #   Path to current model state_dict. If not used, script uses [HuggingFace](https://huggingface.co/ai-forever/FRED-T5-large) checkpoint.
+    --res_model_state_path <path> \ #   Path to resulting model state_dict. If not used, model state will be saved in the current path. Only for training.
+    --res_model_comments_path <path> \  #   Path to json file with comments for model_state.
+    --random_seed 101 \ #   Random seed for torch, numpy.
+    --cuda_idx 0 \  #   For several GPUs.
+    --num_workers 0 \   #   Number of workers for dataloader, etc.
+    --source_text_field_name document \ #   Name of field that includes article.
+    --annotation_field_name summary \   #   Name of field that includes annotation.
+    --need_wandb True \ #   If [Weights & Biases](https://wandb.ai/) logging needed.
+    --wandb_key <key> \ #   Key for [Weights & Biases](https://wandb.ai/) logging. 
     --wandb_project_name <name> \
     --wandb_run_name <name> \
-    --accum_steps 1 \
-    --use_mp False \
-    --use_clipping False \
+    --accum_steps 1 \   #   Number of steps for 1 scheduler step.
+    --use_mp False \    #   If [Mixed Precision](https://pytorch.org/docs/stable/notes/amp_examples.html) needed.
+    --use_clipping False \  #   If [clipping](https://pytorch.org/docs/stable/generated/torch.nn.utils.clip_grad_norm_.html) needed.
     --batch_size 2 \
     --num_epochs 2 \
-    --lr 0.0001 \
-    --weight_decay 0.01 \
-    --num_warmup_steps 1000 \
-    --num_cycles 0.5 \
-    --max_input_length 1000 \
-    --max_target_length 200 \
+    --lr 0.0001 \   #   For AdamW optimization.
+    --weight_decay 0.01 \   #   For AdamW optimization.
+    --num_warmup_steps 1000 \   #   For Cosine Annealing Scheduler.
+    --num_cycles 0.5 \  # For Cosine Annealing Scheduler.
+    --max_input_length 1000 \   #   For tokenizer encoding.
+    --max_target_length 200 \   #   For tokenizer encoding.
     --ignore_warnings False \
     --dir_for_in_between_savings <path> \
     --saving_steps_fraction 0.1 
