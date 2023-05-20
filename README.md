@@ -9,21 +9,41 @@ Full dimploma [in Russian only](https://github.com/paulkulpin/textsum_HSE_news/b
 
 ```bash
 sudo docker build -t "sum_text_hse_back" -f service/backend_utils/dockerfile . 
-
+```
+```bash
 sudo docker run --gpus all -v <model_states path>:/app/model_states -p 8000:8000 sum_text_hse_back
 ```
 
 ## To run the frontend file:
 ```bash
 sudo docker build -t "sum_text_hse_front" -f service/frontend_utils/dockerfile . 
-
+```
+```bash
 sudo docker run -p 8501:8501 sum_text_hse_front
 ```
 
-# How to use training scripts:
-```
+## How to use scripts:
+```bash
 pip install -q -r scripts/requirements.txt
+```
 
+### Data processing:
+```bash
+python scripts/dataset_utils/dataprocess.py \
+    --path_to_json <path> \
+    --path_to_csv <path> \
+    --source_text_field_name body \
+    --annotation_field_name annotation \
+    --max_document_char_length 15000 \
+    --min_document_char_length 100 \
+    --max_summary_char_length 1500 \
+    --min_summary_char_length 10 \
+    --delete_stop_words False 
+```
+
+
+### Training:
+```bash
 python scripts/main.py \
     --action training \ #action to
     --model_type FRED \
@@ -58,3 +78,36 @@ python scripts/main.py \
     --dir_for_in_between_savings <path> \
     --saving_steps_fraction 0.1 
 ```
+
+### Evaluating:
+```bash
+python scripts/main.py \
+    --action evaluating \ #action to
+    --model_type FRED \
+    --csv_dataset_path <path> \
+    --shuffle_dataset False \
+    --reduce_dataset 100.0 \
+    --model_state_path <path> \
+    --HF_model_name FRED-T5-large \
+    --random_seed 101 \
+    --cuda_idx 0 \
+    --num_workers 0 \
+    --source_text_field_name document \
+    --annotation_field_name summary \
+    --need_wandb True \
+    --wandb_key <key> \
+    --wandb_project_name <name> \
+    --wandb_run_name <name> \
+    --batch_size 2 \
+    --eval_max_length 150 \
+    --eval_min_length 10 \
+    --ignore_warnings False
+```
+
+### To get help:
+```bash
+python scripts/main.py -h
+```
+
+
+
