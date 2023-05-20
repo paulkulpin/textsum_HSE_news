@@ -5,9 +5,9 @@ from transformers import MBartForConditionalGeneration, MBartConfig, MBartTokeni
 import torch
 from torch.nn.utils.rnn import pad_sequence
 from pydantic import BaseModel
-import os
+# import os
 
-os.environ['KMP_DUPLICATE_LIB_OK']='True'
+# os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 class Item(BaseModel):
     text: str
@@ -31,16 +31,16 @@ async def summarize(item: Item):
         config = T5Config.from_pretrained('IlyaGusev/rut5_base_sum_gazeta')
         
         model = T5ForConditionalGeneration(config=config)
-        model.load_state_dict(torch.load('/Users/pavelkulpin/Downloads/model_states/rut5_base_sum_gazeta_state.pth', map_location=device))
-        # model.to(device)
+        model.load_state_dict(torch.load('/Users/pavelkulpin/Downloads/model_states/rut5_base_sum_gazeta_state.pth')) #, map_location=device))
+        model.to(device) 
         tokenizer = T5Tokenizer.from_pretrained('IlyaGusev/rut5_base_sum_gazeta')
     
     elif item.model_name == "FRED-T5-Large":
         config = AutoConfig.from_pretrained('ai-forever/FRED-T5-large')
         
         model = T5ForConditionalGeneration(config=config)
-        model.load_state_dict(torch.load('/Users/pavelkulpin/Downloads/model_states/fred_model_state.pth', map_location=device))
-        # model.to(device)
+        model.load_state_dict(torch.load('/Users/pavelkulpin/Downloads/model_states/fred_model_state.pth')) #, map_location=device))
+        model.to(device)
         model.to(device)
         
         tokenizer = GPT2Tokenizer.from_pretrained('ai-forever/FRED-T5-large', eos_token='</s>')
@@ -49,8 +49,8 @@ async def summarize(item: Item):
         config = MBartConfig.from_pretrained('IlyaGusev/mbart_ru_sum_gazeta')
         
         model = MBartForConditionalGeneration(config=config)
-        model.load_state_dict(torch.load('/Users/pavelkulpin/Downloads/model_states/mbart_model_state.pth', map_location=device))
-        # model.to(device)
+        model.load_state_dict(torch.load('/Users/pavelkulpin/Downloads/model_states/mbart_model_state.pth')) #, map_location=device))
+        model.to(device)
         tokenizer = MBartTokenizer.from_pretrained('IlyaGusev/mbart_ru_sum_gazeta')
     
     else:
