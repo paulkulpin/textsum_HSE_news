@@ -10,4 +10,6 @@ RUN pip install -r requirements.txt
 
 COPY . .
 
-CMD streamlit run frontend.py
+EXPOSE 8501:8501
+
+ENTRYPOINT streamlit run frontend.py

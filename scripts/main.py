@@ -1,7 +1,4 @@
-from tqdm import tqdm
 import torch
-import torch.nn as nn
-from torch.nn.utils.rnn import pad_sequence
 from transformers import T5ForConditionalGeneration, T5Tokenizer, T5Config
 from transformers import MBartTokenizer, MBartForConditionalGeneration, MBartConfig
 from transformers import GPT2Tokenizer, GPT2LMHeadModel, GPT2Config
@@ -15,11 +12,11 @@ import evaluate
 import warnings
 import json
 
-from scripts.models.rut5_sum import ruT5SumDataset, ruT5Summarization, rut5_collate_batch
-from scripts.models.fred_sum import FREDSumDataset, FREDSummarization, fred_collate_batch
-from scripts.models.mbart_sum import MBARTSumDataset, MBARTSummarization, mbart_collate_batch
-from scripts.models.rugpt_sum import ruGPTSumDataset, ruGPTSummarization, rugpt_collate_batch
-from scripts.models.mt5_sum import mT5SumDataset, mT5Summarization, mt5_collate_batch
+from models.rut5_sum import ruT5SumDataset, ruT5Summarization, rut5_collate_batch
+from models.fred_sum import FREDSumDataset, FREDSummarization, fred_collate_batch
+from models.mbart_sum import MBARTSumDataset, MBARTSummarization, mbart_collate_batch
+from models.rugpt_sum import ruGPTSumDataset, ruGPTSummarization, rugpt_collate_batch
+from models.mt5_sum import mT5SumDataset, mT5Summarization, mt5_collate_batch
 
 
 def set_random_seed(seed):
