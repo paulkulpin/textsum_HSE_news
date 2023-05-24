@@ -11,7 +11,7 @@ import argparse
 import html
 
 nltk.download('punkt')
-
+nltk.download('stopwords')
 
 
 def prep_doc(text: str, delete_stop_words: bool = False):
@@ -61,7 +61,6 @@ def prep_doc(text: str, delete_stop_words: bool = False):
         text = text[:-2]
 
     if delete_stop_words:
-        nltk.download('stopwords')
         stop_words = set(stopwords.words('russian'))
         words = [word for word in text.split() if word not in stop_words]
         text = ' '.join(words)
@@ -85,7 +84,6 @@ def prep_ann(text: str, delete_stop_words: bool = False):
     text = re.sub(r'\s+', ' ', text)
 
     if delete_stop_words:
-        nltk.download('stopwords')
         stop_words = set(stopwords.words('russian'))
         words = [word for word in text.split() if word not in stop_words]
         text = ' '.join(words)
