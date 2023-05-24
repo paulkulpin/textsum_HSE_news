@@ -9,10 +9,12 @@ import numpy as np
 from tqdm.auto import tqdm as tqdm_
 import argparse
 import html
+import concurrent.futures
 
 nltk.download('punkt')
 nltk.download('stopwords')
 
+ids_to_drop = set()
 
 def prep_doc(text: str, delete_stop_words: bool = False):
     soup = BeautifulSoup(text, 'html.parser')
@@ -65,8 +67,7 @@ def prep_doc(text: str, delete_stop_words: bool = False):
         words = [word for word in text.split() if word not in stop_words]
         text = ' '.join(words)
 
-    return text
-
+    return text        
 
 def prep_ann(text: str, delete_stop_words: bool = False):
     soup = BeautifulSoup(text, 'html.parser')
@@ -90,6 +91,21 @@ def prep_ann(text: str, delete_stop_words: bool = False):
 
     return text
 
+def timeout_proc(row, id_, func, timeout_duration):
+    # print(id_)
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future = executor.submit(func, row)
+        try:
+            result = future.result(timeout=timeout_duration)
+        except concurrent.futures.TimeoutError:
+            print(f"Preprocessing function took longer than {timeout_duration} seconds. Skipping this row.")
+            ids_to_drop.add(id_)
+            return row 
+        except Exception as e:
+            print(f"Error while processing row: {e}. Skipping this row.")
+            return row 
+        else:
+            return result
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process scrapped json.')
@@ -102,7 +118,8 @@ if __name__ == "__main__":
     parser.add_argument('--min_document_char_length', type=int, help="Min length of document in symbols", default=500)
     parser.add_argument('--max_summary_char_length', type=int, help="Max length of summary in symbols", default=1000)
     parser.add_argument('--min_summary_char_length', type=int, help="Min length of summary in symbols", default=20)
-    parser.add_argument('--sum_doc_proportion', type=float, help="Delete all texts with sum/doc lengths proportion bigger than <value>. if 0.0, then no deleting.", default=1.5)
+    parser.add_argument('--sum_doc_proportion', type=float, help="Delete all texts with sum/doc lengths proportion bigger than <value>. if 0.0, then no deleting.", default=0.5)
+    parser.add_argument('--timeout_time', type=int, help="if tt > 0, while iterating it will drop rows that take too much time. also there won't be a progress bar.", default=0)
     
     args = dict(vars(parser.parse_args()))
 
@@ -122,16 +139,19 @@ if __name__ == "__main__":
     df = df[df['document'].str.len() <= args['max_document_char_length']]
     df = df[df['document'].str.len() >= args['min_document_char_length']]
     df = df[df['summary'].str.len() <= args['max_summary_char_length']]
-    df = df[df['summary'].str.len() >= args['min_summary_char_length']]
+    df = df[df['summary'].str.len() >= args['min_summary_char_length']].reset_index(drop=True)
 
     if args['sum_doc_proportion'] > 0.0:
         df['ratio'] = df['summary'].str.len() / df['document'].str.len()
         df = df[df['ratio'] <= args['sum_doc_proportion']]
-
+    
     tqdm_.pandas()
-    df['document'] = df['document'].progress_apply(
-        lambda x: prep_doc(x, delete_stop_words=args['delete_stop_words']))
-    df['summary'] = df['summary'].progress_apply(
-        lambda x: prep_ann(x, delete_stop_words=args['delete_stop_words']))
+    if args['timeout_time'] > 0:
+        df['document'] = df.progress_apply(lambda row: timeout_proc(row['document'], row.name, prep_doc, args['timeout_time']), axis=1)
+        df['summary'] = df.progress_apply(lambda row: timeout_proc(row['summary'], row.name, prep_ann, args['timeout_time']), axis=1)
+        df = df.drop(ids_to_drop)
+    else:
+        df['document'] = df['document'].progress_apply(lambda x: prep_doc(x, delete_stop_words=args['delete_stop_words']))
+        df['summary'] = df['summary'].progress_apply(lambda x: prep_ann(x, delete_stop_words=args['delete_stop_words']))
 
     df.to_csv(args['path_to_csv'], index=False)
