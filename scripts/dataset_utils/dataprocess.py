@@ -155,3 +155,7 @@ if __name__ == "__main__":
         df['summary'] = df['summary'].progress_apply(lambda x: prep_ann(x, delete_stop_words=args['delete_stop_words']))
 
     df.to_csv(args['path_to_csv'], index=False)
+
+
+
+
