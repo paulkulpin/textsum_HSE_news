@@ -7,6 +7,7 @@ Automatic text reduction, a.k.a. text summarization, is one of the most common s
 Deep learning, Natural Language Processing, dataset, full-stack NLP application.
 
 **Full dimploma paper: [in Russian only](https://github.com/paulkulpin/textsum_HSE_news/blob/main/TextSum_HSEnews_diploma.pdf)**
+---
 
 ## To run the backend file:
 
