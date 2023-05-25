@@ -9,12 +9,12 @@ import numpy as np
 from tqdm.auto import tqdm as tqdm_
 import argparse
 import html
-import concurrent.futures
+from multiprocess import Pool, TimeoutError
+import time
+import os
 
 nltk.download('punkt')
 nltk.download('stopwords')
-
-ids_to_drop = set()
 
 def prep_doc(text: str, delete_stop_words: bool = False):
     soup = BeautifulSoup(text, 'html.parser')
@@ -91,21 +91,31 @@ def prep_ann(text: str, delete_stop_words: bool = False):
 
     return text
 
-def timeout_proc(row, id_, func, timeout_duration):
-    # print(id_)
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        future = executor.submit(func, row)
-        try:
-            result = future.result(timeout=timeout_duration)
-        except concurrent.futures.TimeoutError:
-            print(f"Preprocessing function took longer than {timeout_duration} seconds. Skipping this row.")
-            ids_to_drop.add(id_)
-            return row 
-        except Exception as e:
-            print(f"Error while processing row: {e}. Skipping this row.")
-            return row 
-        else:
-            return result
+def timeout_proc(row, row_id, func, timeout_duration):
+    pool = Pool(processes=1)
+    result = pool.apply_async(func, [row])
+    
+    try:
+        return result.get(timeout=timeout_duration)
+    except TimeoutError:
+        print(f"Preprocessing function took longer than {timeout_duration} seconds for row {row_id}. Skipping this row.")
+        pool.terminate()
+        return None
+
+    # # print(id_)
+    # with concurrent.futures.ThreadPoolExecutor() as executor:
+    #     future = executor.submit(func, row)
+    #     try:
+    #         result = future.result(timeout=timeout_duration)
+    #     except concurrent.futures.TimeoutError:
+    #         print(f"Preprocessing function took longer than {timeout_duration} seconds. Skipping this row.")
+    #         ids_to_drop.add(id_)
+    #         return row 
+    #     except Exception as e:
+    #         print(f"Error while processing row: {e}. Skipping this row.")
+    #         return row 
+    #     else:
+    #         return result
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process scrapped json.')
@@ -135,25 +145,25 @@ if __name__ == "__main__":
     df = df[[args['source_text_field_name'], args['annotation_field_name']]] \
         .rename(columns={args['source_text_field_name']: "document", args['annotation_field_name']: "summary"}) \
         .dropna().reset_index(drop=True)
-
-    df = df[df['document'].str.len() <= args['max_document_char_length']]
-    df = df[df['document'].str.len() >= args['min_document_char_length']]
-    df = df[df['summary'].str.len() <= args['max_summary_char_length']]
-    df = df[df['summary'].str.len() >= args['min_summary_char_length']].reset_index(drop=True)
-
-    if args['sum_doc_proportion'] > 0.0:
-        df['ratio'] = df['summary'].str.len() / df['document'].str.len()
-        df = df[df['ratio'] <= args['sum_doc_proportion']]
     
     tqdm_.pandas()
     if args['timeout_time'] > 0:
         df['document'] = df.progress_apply(lambda row: timeout_proc(row['document'], row.name, prep_doc, args['timeout_time']), axis=1)
         df['summary'] = df.progress_apply(lambda row: timeout_proc(row['summary'], row.name, prep_ann, args['timeout_time']), axis=1)
-        df = df.drop(ids_to_drop)
+        df = df.dropna().reset_index(drop=True)
     else:
         df['document'] = df['document'].progress_apply(lambda x: prep_doc(x, delete_stop_words=args['delete_stop_words']))
         df['summary'] = df['summary'].progress_apply(lambda x: prep_ann(x, delete_stop_words=args['delete_stop_words']))
 
+    df = df[df['document'].str.len() <= args['max_document_char_length']]
+    df = df[df['document'].str.len() >= args['min_document_char_length']]
+    df = df[df['summary'].str.len() <= args['max_summary_char_length']]
+    df = df[df['summary'].str.len() >= args['min_summary_char_length']]
+
+    if args['sum_doc_proportion'] > 0.0:
+        df['ratio'] = df['summary'].str.len() / df['document'].str.len()
+        df = df[df['ratio'] <= args['sum_doc_proportion']].reset_index(drop=True)
+        
     df.to_csv(args['path_to_csv'], index=False)
 
 
