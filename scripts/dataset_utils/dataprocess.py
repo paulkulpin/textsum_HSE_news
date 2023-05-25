@@ -10,8 +10,6 @@ from tqdm.auto import tqdm as tqdm_
 import argparse
 import html
 from multiprocess import Pool, TimeoutError
-import time
-import os
 
 nltk.download('punkt')
 nltk.download('stopwords')
