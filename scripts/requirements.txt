@@ -10,3 +10,4 @@ sacrebleu
 rouge_score
 sentencepiece==0.1.98
 html
+multiprocess==0.70.14
