@@ -42,9 +42,9 @@ python scripts/dataset_utils/dataprocess.py \
     --min_document_char_length 100 \    #   Acticles with symbols length less than <value> symbols will be filtered out.
     --max_summary_char_length 1500 \    #   Annotation with symbols length more than <value> symbols will be filtered out.
     --min_summary_char_length 10 \  #   Annotation with symbols length less than <value> symbols will be filtered out.
-    --delete_stop_words True \  #   If stopwords deleting required. Default value is False. Do not use this parameter if you exactly want not to delete.
+    #--delete_stop_words True \  #   If stopwords deleting required. Default value is False. Do not use this parameter if you exactly want not to delete.
     --sum_doc_proportion 0.5 \  #   To delete all the examples with len(annotation)/len(article) > <value>.
-    #--timeout_time 2    #   If timeout_time == 0, there will be no timeout for each example. It may work much faster, but may stop during BeatufulSoup exception.
+    --timeout_time 2    #   If timeout_time == 0, there will be no timeout for each example. It may work much faster, but may stop during BeatufulSoup exception.
 ```
 
 
