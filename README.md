@@ -57,7 +57,7 @@ python scripts/main.py \
     --HF_model_name FRED-T5-large \ #   Hugging Face model/tokenizer name. (obligatory)
     --shuffle_dataset True \    #   If dataset shuffling needed? [True/False]
     --reduce_dataset 100.0 \    #   Percentage part of dataset to keep. [0.0 - 100.0]
-    --model_state_path <path> \ #   Path to current model state_dict. If not used, script uses ```[HuggingFace](https://huggingface.co/ai-forever/FRED-T5-large)``` checkpoint.
+    --model_state_path <path> \ #   Path to current model state_dict. If not used, script uses [HuggingFace](https://huggingface.co/ai-forever/FRED-T5-large) checkpoint.
     --res_model_state_path <path> \ #   Path to resulting model state_dict. If not used, model state will be saved in the current path. Only for training.
     --res_model_comments_path <path> \  #   Path to json file with comments for model_state.
     --random_seed 101 \ #   Random seed for torch, numpy.
